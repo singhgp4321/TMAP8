@@ -1,8 +1,11 @@
+length_unit = 1e6 # number of length units in a meter
+temperature = 703 # K
+
 [Mesh]
   type = GeneratedMesh
   dim = 1
-  nx = 1000
-  xmax = 100
+  nx = 100
+  xmax = '${fparse 500 * length_unit}'
 []
 
 [Variables]
@@ -10,22 +13,27 @@
   []
 []
 
-[ICs]
-  [function]
-    type = FunctionIC
-    variable = u
-    function = 'if(x<10,1,0)'
-  []
-[]
-
 [Kernels]
   [diff]
-    type = Diffusion
+    type = MatDiffusion
     variable = u
+    diffusivity = '${fparse 3.0e-10*exp(-308000/(8.314*temperature))*length_unit^2}'
   []
   [time]
     type = TimeDerivative
     variable = u
+  []
+[]
+
+[BCs]
+  [left_right]
+    type = ADMolecularRecombinationBC2
+    variable = u
+    boundary = 'left right'
+    alpha = 2.0e-4
+    Kro = 1e-3
+    beta = 6.0e-5
+    fluence = '${fparse 3.9e17 / (60.0 * (1.0e-2 * length_unit)^2)}'
   []
 []
 
