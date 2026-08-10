@@ -9,7 +9,7 @@
 
 #include "EnthalpyMaterial.h"
 
-registerMooseObject("HeatTransferApp", EnthalpyMaterial);
+registerMooseObject("TMAP8App", EnthalpyMaterial);
 
 InputParameters
 EnthalpyMaterial::validParams()
@@ -37,12 +37,7 @@ EnthalpyMaterial::EnthalpyMaterial(const InputParameters & parameters)
 void
 EnthalpyMaterial::computeQpProperties()
 {
-  // Real a = _scaling_factor * 222.2222;
-  // Real b = _scaling_factor * -154320.9876;
-  // Real c = _scaling_factor * -570543.2099;
-  // _enthalpy[_qp] = a * _temperature[_qp] + b * _concentration[_qp] + c; // J/kg
-  Real b = -0.42862;
-  Real c = -89166.66;
-  _enthalpy[_qp] = (b * _concentration[_qp] + c) / 0.09; // (J/mol) / 0.09 J/kg
-  _dH_dc[_qp] = b / 0.09;
+  // Compute enthalpy and its derivative with respect to concentration
+  _enthalpy[_qp] = -61088.4 + 46.111 * _temperature[_qp] - 0.17916 * _concentration[_qp] - 0.00028575 * _temperature[_qp] * _concentration[_qp];
+  _dH_dc[_qp] = -0.17916 - 0.00028575 * _temperature[_qp];
 }

@@ -9,7 +9,7 @@
 
 #include "ADEnthalpyHeatSource.h"
 
-registerMooseObject("HeatTransferApp", ADEnthalpyHeatSource);
+registerMooseObject("TMAP8App", ADEnthalpyHeatSource);
 
 InputParameters
 ADEnthalpyHeatSource::validParams()

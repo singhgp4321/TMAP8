@@ -10,8 +10,8 @@
 #include "YHElasticityTensor.h"
 #include "RankTwoTensor.h"
 
-registerMooseObject("SolidMechanicsApp", YHElasticityTensor);
-registerMooseObject("SolidMechanicsApp", ADYHElasticityTensor);
+registerMooseObject("TMAP8App", YHElasticityTensor);
+registerMooseObject("TMAP8App", ADYHElasticityTensor);
 
 template <bool is_ad>
 InputParameters

@@ -9,7 +9,7 @@
 
 #include "ADEnthalpyMaterial.h"
 
-registerMooseObject("HeatTransferApp", ADEnthalpyMaterial);
+registerMooseObject("TMAP8App", ADEnthalpyMaterial);
 
 InputParameters
 ADEnthalpyMaterial::validParams()
