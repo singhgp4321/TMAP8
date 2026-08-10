@@ -27,8 +27,8 @@ protected:
 
   const Real _hydrogen_equilibrium_concentration;
 
-  /// Scaling factor for hydrogen concentration
-  const Real _h_conc_scale_factor;
+  /// Yttrium concentration in mol/m^3
+  const Real _y_concentration;
 
   const Real _yh_swelling_strain;
 

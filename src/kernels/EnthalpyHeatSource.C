@@ -9,7 +9,7 @@
 
 #include "EnthalpyHeatSource.h"
 
-registerMooseObject("HeatTransferApp", EnthalpyHeatSource);
+registerMooseObject("TMAP8App", EnthalpyHeatSource);
 
 InputParameters
 EnthalpyHeatSource::validParams()
