@@ -33,48 +33,148 @@ lower_value_threshold_concentration_YHx = -1e-20
 [Mesh]
   coord_type = RZ
 
-  # ============ Sample (r = [0, 0.5] cm) ============
-  [sample]
+  # ============ Sample column pieces (r = [0, 0.5], uniform) ============
+  [cap_bot_sample]
     type = GeneratedMeshGenerator
-    dim = 1
+    dim = 2
     xmin = 0
     xmax = 0.5
+    ymin = 0
+    ymax = 0.005
     nx = 35
-    boundary_name_prefix = 'sample'
+    ny = 12
+    boundary_name_prefix = 'cbs'
+  []
+  [body_bot_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 0.005
+    ymax = 0.505
+    nx = 35
+    ny = 50
+    boundary_name_prefix = 'bbs'
+  []
+  [body_top_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 0.505
+    ymax = 1.005
+    nx = 35
+    ny = 50
+    boundary_name_prefix = 'bts'
+  []
+  [cap_top_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 1.005
+    ymax = 1.01
+    nx = 35
+    ny = 12
+    boundary_name_prefix = 'cts'
   []
 
-  # ============ Chamber (r = [0.5, 0.505] cm) ============
-  [chamber]
+  # ============ Chamber column pieces (r = [0.5, 0.505], uniform) ============
+  [cap_bot_chamber]
     type = GeneratedMeshGenerator
-    dim = 1
+    dim = 2
     xmin = 0.5
     xmax = 0.505
+    ymin = 0
+    ymax = 0.005
     nx = 6
-    boundary_name_prefix = 'chamber'
+    ny = 12
+    boundary_name_prefix = 'cbc'
+  []
+  [body_bot_chamber]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0.5
+    xmax = 0.505
+    ymin = 0.005
+    ymax = 0.505
+    nx = 6
+    ny = 50
+    boundary_name_prefix = 'bbc'
+  []
+  [body_top_chamber]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0.5
+    xmax = 0.505
+    ymin = 0.505
+    ymax = 1.005
+    nx = 6
+    ny = 50
+    boundary_name_prefix = 'btc'
+  []
+  [cap_top_chamber]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0.5
+    xmax = 0.505
+    ymin = 1.005
+    ymax = 1.01
+    nx = 6
+    ny = 12
+    boundary_name_prefix = 'ctc'
   []
 
-  # ============ Stitch radially ============
-  [stitch]
+  # ============ Stitch vertically (4 pieces per column) ============
+  [col_sample]
     type = StitchMeshGenerator
-    inputs = 'sample chamber'
-    stitch_boundaries_pairs = 'sample_right chamber_left'
+    inputs = 'cap_bot_sample body_bot_sample body_top_sample cap_top_sample'
+    stitch_boundaries_pairs = 'cbs_top bbs_bottom; bbs_top bts_bottom; bts_top cts_bottom'
+    clear_stitched_boundary_ids = true
+  []
+  [col_chamber]
+    type = StitchMeshGenerator
+    inputs = 'cap_bot_chamber body_bot_chamber body_top_chamber cap_top_chamber'
+    stitch_boundaries_pairs = 'cbc_top bbc_bottom; bbc_top btc_bottom; btc_top ctc_bottom'
     clear_stitched_boundary_ids = true
   []
 
-  # ============ Rename boundaries ============
-  [rename]
+  # ============ Consolidate boundaries for radial stitching ============
+  [rename_col_sample]
     type = RenameBoundaryGenerator
-    input = stitch
-    old_boundary = 'sample_left chamber_right'
-    new_boundary = 'left outer'
+    input = col_sample
+    old_boundary = 'cbs_right bbs_right bts_right cts_right
+                    cbs_left bbs_left bts_left cts_left
+                    cbs_bottom cts_top'
+    new_boundary = 'sample_right sample_right sample_right sample_right
+                    left left left left
+                    bottom top'
+  []
+  [rename_col_chamber]
+    type = RenameBoundaryGenerator
+    input = col_chamber
+    old_boundary = 'cbc_right bbc_right btc_right ctc_right
+                    cbc_left bbc_left btc_left ctc_left
+                    cbc_bottom ctc_top'
+    new_boundary = 'outer outer outer outer
+                    chamber_left chamber_left chamber_left chamber_left
+                    bottom top'
+  []
+
+  # ============ Stitch radially ============
+  [stitch_all]
+    type = StitchMeshGenerator
+    inputs = 'rename_col_sample rename_col_chamber'
+    stitch_boundaries_pairs = 'sample_right chamber_left'
+    clear_stitched_boundary_ids = true
   []
 
   # ============ Scale to meters ============
   [scale]
     type = TransformGenerator
-    input = rename
+    input = stitch_all
     transform = SCALE
-    vector_value = '0.01 1 1'
+    vector_value = '0.01 0.01 1'
   []
 
   # ============ Assign subdomains ============
@@ -82,22 +182,22 @@ lower_value_threshold_concentration_YHx = -1e-20
   [assign_all_chamber]
     type = SubdomainBoundingBoxGenerator
     input = scale
-    bottom_left = '0 -1 -1'
-    top_right = '0.006 1 1'
+    bottom_left = '0 0 0'
+    top_right = '0.00506 0.0102 0'
     block_id = 2
     block_name = 'chamber'
   []
-  # Then carve out the sample region
+  # Then carve out the sample region (inner radial, between caps)
   [assign_sample]
     type = SubdomainBoundingBoxGenerator
     input = assign_all_chamber
-    bottom_left = '0 -1 -1'
-    top_right = '0.00500 1 1'
+    bottom_left = '0 0.00005 0'
+    top_right = '0.00500 0.01005 0'
     block_id = 1
     block_name = 'sample'
   []
 
-  # ============ Interface sideset ============
+  # ============ Interface and boundary naming ============
   [interface_sideset]
     type = SideSetsBetweenSubdomainsGenerator
     input = assign_sample
@@ -188,7 +288,7 @@ lower_value_threshold_concentration_YHx = -1e-20
 
   [surface_temperature]
     type = ADFunctionDirichletBC
-    boundary = 'outer'
+    boundary = 'outer top bottom'
     variable = temp
     function = surface_temperature_function
   []
@@ -197,7 +297,7 @@ lower_value_threshold_concentration_YHx = -1e-20
 
   [h_conc_gas_outer_fixed]
     type = ADDirichletBC
-    boundary = 'outer'
+    boundary = 'outer top bottom'
     variable = h_conc_gas
     value = 8.0
   []

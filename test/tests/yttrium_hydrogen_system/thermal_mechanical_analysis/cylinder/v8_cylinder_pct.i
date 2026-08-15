@@ -28,8 +28,8 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
   [circle_mesh]
     type = ConcentricCircleMeshGenerator
     num_sectors = 6
-    radii = '0.095 0.18 0.255 0.32 0.375 0.42 0.455 0.48 0.495 0.49595 0.4968 0.49755 0.4982 0.49875 0.4992 0.49955 0.4998 0.49995 0.49998 0.49999 0.5'
-    rings = '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
+    radii = '0.095 0.18 0.255 0.32 0.375 0.42 0.455 0.48 0.495 0.49595 0.4968 0.49755 0.4982 0.49875 0.4992 0.49955 0.4998 0.49995 0.49998 0.49999 0.5 0.505'
+    rings = '1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1'
     # radii = '0.         0.1        0.19501708 0.28502039 0.36997909 0.44986234
     #          0.52463929 0.59427909 0.65875089 0.71802386 0.77206715 0.82084992
     #          0.86434131 0.90251049 0.9353266  0.96275881 0.98477627 1.00134813
@@ -57,6 +57,30 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     transform = SCALE
     vector_value = '0.01 0.01 0.01'  # scale x, y, z independently
   []
+  [rename_sample]
+    type = RenameBlockGenerator
+    input = scale
+    old_block = '1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21'
+    new_block = 'sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample sample'
+  []
+  [rename_chamber]
+    type = RenameBlockGenerator
+    input = rename_sample
+    old_block = '22'
+    new_block = 'chamber'
+  []
+  [interface_sideset]
+    type = SideSetsBetweenSubdomainsGenerator
+    input = rename_chamber
+    primary_block = chamber
+    paired_block = sample
+    new_boundary = 'interface'
+  []
+  [merge_duplicate_boundaries]
+    type = MeshRepairGenerator
+    input = interface_sideset
+    merge_boundary_ids_with_same_name = true
+  []
 []
 
 [GlobalParams]
@@ -66,9 +90,11 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
 [Variables]
   [h_conc]
     initial_condition = ${fparse 1.4 * h_conc_scaling_factor} #0.2
+    block = sample
   []
   [h_conc_gas]
     initial_condition = ${fparse 1.4 * h_conc_scaling_factor} #0.2
+    block = chamber
   []
   [temp]
     initial_condition = 298.0
@@ -87,7 +113,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
 []
 
 [Physics/SolidMechanics/QuasiStatic]
-  [all]
+  [sample]
     strain = FINITE
     incremental = true
     add_variables = true
@@ -96,6 +122,17 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     # eigenstrain_names = 'swelling thermal_expansion_eigenstrain'
     eigenstrain_names = 'thermal_expansion_eigenstrain'
     extra_vector_tags = 'ref'
+    block = sample
+  []
+  [chamber]
+    strain = FINITE
+    incremental = true
+    add_variables = true
+    use_automatic_differentiation = true
+    generate_output = 'max_principal_stress stress_xx stress_yy stress_zz stress_xy stress_yz stress_xz strain_yy strain_xx strain_zz strain_xy strain_xz strain_yz'
+    eigenstrain_names = 'thermal_expansion_eigenstrain'
+    extra_vector_tags = 'ref'
+    block = chamber
   []
 []
 
@@ -120,12 +157,12 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
 # []
 
 [BCs]
-  [surface_hydrogen_conc]
-    type = ADDirichletBC
-    boundary = outer #10
-    variable = h_conc
-    value = ${fparse 1.80 * h_conc_scaling_factor} #0.75
-  []
+  # [surface_hydrogen_conc]
+  #   type = ADDirichletBC
+  #   boundary = outer #10
+  #   variable = h_conc
+  #   value = ${fparse 1.80 * h_conc_scaling_factor} #0.75
+  # []
   [x]
     type = ADDirichletBC
     boundary = bottom
@@ -192,11 +229,24 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
   [time]
     type = ADTimeDerivative
     variable = h_conc
+    block = sample
   []
   [diff]
     type = ADMatDiffusion
     variable = h_conc
     diffusivity = diffusivity
+    block = sample
+  []
+  [time_gas]
+    type = ADTimeDerivative
+    variable = h_conc_gas
+    block = chamber
+  []
+  [diff_gas]
+    type = MatDiffusion
+    variable = h_conc_gas
+    diffusivity = diffusivity_gas
+    block = chamber
   []
   [heat]
     type = ADHeatConduction
@@ -210,6 +260,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     type = ADEnthalpyHeatSource
     variable = temp
     c = h_conc
+    block = sample
     # h_conc_scale_factor = ${h_conc_scale_factor}
   []
 
@@ -255,21 +306,22 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     material_property_names = diffusivity_YHx
     expression = '${diffusivity_ratio_gas_YHx}*diffusivity_YHx'
     outputs = exodus
+    block = chamber
   []
-  [reaction_rate_surface_YHx]
+  [reaction_rate_surface_YHx_1]
     type = ADDerivativeParsedMaterial
     property_name = reaction_rate_surface_YHx
     coupled_variables = 'temp'
     expression = '${reaction_rate_0} * exp(-${fparse reaction_rate_Ea/boltzmann_constant}/temp)' # 1/s
-    # block = '1'
+    block = chamber
   []
-  # [reaction_rate_surface_YHx_2]
-  #   type = ADDerivativeParsedMaterial
-  #   property_name = reaction_rate_surface_YHx
-  #   coupled_variables = 'temperature'
-  #   expression = '${reaction_rate_0} * exp(-${fparse reaction_rate_Ea/boltzmann_constant}/temperature)' # 1/s
-  #   block = '2'
-  # []
+  [reaction_rate_surface_YHx_2]
+    type = ADDerivativeParsedMaterial
+    property_name = reaction_rate_surface_YHx
+    coupled_variables = 'temp'
+    expression = '${reaction_rate_0} * exp(-${fparse reaction_rate_Ea/boltzmann_constant}/temp)' # 1/s
+    block = sample
+  []
   #====================================================================
 
   [Ea] # Activation Energy (eV) Ref: Lin et al., IJHE, 2025
@@ -280,6 +332,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
                ${fparse 1.91*h_conc_scaling_factor} 0.75'
     property = Ea
     variable = h_conc
+    block = sample
   []
   [D_o] # Diffusion constant (m2/s) Ref: Lin et al., IJHE, 2025
     type = ADPiecewiseLinearInterpolationMaterial
@@ -289,6 +342,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
                ${fparse 1.91*h_conc_scaling_factor} 0.03534e-4'
     property = D_o
     variable = h_conc
+    block = sample
   []
   [diffusivity]
     type = ADParsedMaterial
@@ -299,8 +353,9 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     material_property_names = 'Ea D_o'
     expression = 'D_o * exp(-Ea/(k_B*temp))'
     outputs = exodus
+    block = sample
   []
-  [elasticity_tensor]
+  [elasticity_tensor_sample]
     type = ADYHElasticityTensor
     youngs_modulus_Y = 66e9
     youngs_modulus_YH = 140e9
@@ -308,6 +363,13 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     hydrogen_concentration = h_conc
     h_conc_scale_factor = ${fparse 1/h_conc_scaling_factor}
     hydrogen_equilibrium_concentration = 1
+    block = sample
+  []
+  [elasticity_tensor_chamber]
+    type = ADComputeIsotropicElasticityTensor
+    poissons_ratio = 0.3
+    youngs_modulus = 1e9
+    block = chamber
   []
   [stress]
     type = ADComputeFiniteStrainElasticStress
@@ -333,6 +395,13 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
   [density]
     type = ADStrainAdjustedDensity
     strain_free_density = 4270
+    block = sample
+  []
+  [density_chamber]
+    type = ADGenericConstantMaterial
+    prop_names = 'density'
+    prop_values = '0.0899' # approximate H2 gas density (kg/m^3)
+    block = chamber
   []
   [thermal]
     type = ADHeatConductionMaterial
@@ -369,6 +438,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     temperature = temp
     concentration = h_conc
     scaling_factor = 0.0
+    block = sample
   []
 []
 
@@ -377,7 +447,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     type = InterfaceDiffusion
     variable = h_conc_gas
     neighbor_var = h_conc
-    boundary = interface_2
+    boundary = interface
     D = diffusivity_YHx
     D_neighbor = diffusivity_gas
   []
@@ -385,51 +455,51 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     type = ADMatInterfaceReactionYHxPCT
     variable = h_conc_gas
     neighbor_var = h_conc
-    neighbor_temperature = temperature
+    neighbor_temperature = temp
     density = ${density_Y}
-    boundary = interface_2
+    boundary = interface
     forward_rate = 'reaction_rate_surface_YHx'
     backward_rate = 'reaction_rate_surface_YHx'
   []
 []
 
-[Adaptivity]
-  marker = combined
-  max_h_level = 1
-  initial_steps = 1
-  stop_time = 1
-  [Indicators]
-    [temp_grad_jump]
-      type = GradientJumpIndicator
-      variable = temp
-    []
-    [temp_value_jump]
-      type = ValueJumpIndicator
-      variable = temp
-    []
-  []
-
-  [Markers]
-    [temp_value_marker]
-      type = ErrorToleranceMarker
-      indicator = temp_value_jump
-      coarsen = 0.1
-      refine = 0.1
-    []
-    [temp_grad_marker]
-      type = ErrorToleranceMarker
-      indicator = temp_grad_jump
-      coarsen = 0.1
-      refine = 0.1
-    []
-    [combined]
-      type = ComboMarker
-      # markers = 'errorfracpore'
-      # markers = 'pore_surface_adapt'
-      markers = 'temp_value_marker temp_grad_marker'
-    []
-  []
-[]
+# [Adaptivity]
+#   marker = combined
+#   max_h_level = 1
+#   initial_steps = 1
+#   stop_time = 1
+#   [Indicators]
+#     [temp_grad_jump]
+#       type = GradientJumpIndicator
+#       variable = temp
+#     []
+#     [temp_value_jump]
+#       type = ValueJumpIndicator
+#       variable = temp
+#     []
+#   []
+#
+#   [Markers]
+#     [temp_value_marker]
+#       type = ErrorToleranceMarker
+#       indicator = temp_value_jump
+#       coarsen = 0.1
+#       refine = 0.1
+#     []
+#     [temp_grad_marker]
+#       type = ErrorToleranceMarker
+#       indicator = temp_grad_jump
+#       coarsen = 0.1
+#       refine = 0.1
+#     []
+#     [combined]
+#       type = ComboMarker
+#       # markers = 'errorfracpore'
+#       # markers = 'pore_surface_adapt'
+#       markers = 'temp_value_marker temp_grad_marker'
+#     []
+#   []
+# []
 
 [Preconditioning]
   [SMP]
@@ -495,6 +565,7 @@ reaction_rate_Ea = '${units 1.52 eV -> J}'
     type = ElementAverageValue
     variable = 'h_conc'
     execute_on = 'timestep_end'
+    block = sample
   []
 []
 

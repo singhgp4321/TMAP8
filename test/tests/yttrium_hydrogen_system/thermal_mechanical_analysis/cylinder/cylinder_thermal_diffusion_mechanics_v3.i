@@ -36,33 +36,53 @@ lower_value_threshold_concentration_YHx = -1e-20
 [Mesh]
   coord_type = RZ
 
-  # ============ Bottom cap pieces (y = [0, 0.005], all chamber) ============
-  [cap_bot_bulk]
+  # ============ Sample column pieces (r = [0, 0.5], uniform) ============
+  [cap_bot_sample]
     type = GeneratedMeshGenerator
     dim = 2
     xmin = 0
-    xmax = 0.495
-    ymin = 0
-    ymax = 0.005
-    nx = 29
-    ny = 12
-    bias_x = 0.9
-    bias_y = 0.667
-    boundary_name_prefix = 'cbb'
-  []
-  [cap_bot_fine]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0.495
     xmax = 0.5
     ymin = 0
     ymax = 0.005
-    nx = 12
-    ny = 12
-    bias_x = 0.667
-    bias_y = 0.667
-    boundary_name_prefix = 'cbf'
+    nx = 70
+    ny = 24
+    boundary_name_prefix = 'cbs'
   []
+  [body_bot_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 0.005
+    ymax = 0.505
+    nx = 70
+    ny = 100
+    boundary_name_prefix = 'bbs'
+  []
+  [body_top_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 0.505
+    ymax = 1.005
+    nx = 70
+    ny = 100
+    boundary_name_prefix = 'bts'
+  []
+  [cap_top_sample]
+    type = GeneratedMeshGenerator
+    dim = 2
+    xmin = 0
+    xmax = 0.5
+    ymin = 1.005
+    ymax = 1.01
+    nx = 70
+    ny = 24
+    boundary_name_prefix = 'cts'
+  []
+
+  # ============ Chamber column pieces (r = [0.5, 0.505], uniform) ============
   [cap_bot_chamber]
     type = GeneratedMeshGenerator
     dim = 2
@@ -71,38 +91,8 @@ lower_value_threshold_concentration_YHx = -1e-20
     ymin = 0
     ymax = 0.005
     nx = 12
-    ny = 12
-    bias_x = 1.5
-    bias_y = 0.667
+    ny = 24
     boundary_name_prefix = 'cbc'
-  []
-
-  # ============ Main body bottom half (y = [0.005, 0.505]) ============
-  [body_bot_bulk]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0
-    xmax = 0.495
-    ymin = 0.005
-    ymax = 0.505
-    nx = 29
-    ny = 50 # 12
-    bias_x = 0.9
-    bias_y = 1.2            # small elements at bottom (near cap), growing upward
-    boundary_name_prefix = 'bbb'
-  []
-  [body_bot_fine]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0.495
-    xmax = 0.5
-    ymin = 0.005
-    ymax = 0.505
-    nx = 12
-    ny = 50 # 12
-    bias_x = 0.667
-    bias_y = 1.2
-    boundary_name_prefix = 'bbf'
   []
   [body_bot_chamber]
     type = GeneratedMeshGenerator
@@ -112,38 +102,8 @@ lower_value_threshold_concentration_YHx = -1e-20
     ymin = 0.005
     ymax = 0.505
     nx = 12
-    ny = 50 # 12
-    bias_x = 1.5
-    bias_y = 1.2
+    ny = 100
     boundary_name_prefix = 'bbc'
-  []
-
-  # ============ Main body top half (y = [0.505, 1.005]) ============
-  [body_top_bulk]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0
-    xmax = 0.495
-    ymin = 0.505
-    ymax = 1.005
-    nx = 29
-    ny = 50 # 12
-    bias_x = 0.9
-    bias_y = 0.8333           # large elements at bottom (center), shrinking toward top (near cap)
-    boundary_name_prefix = 'btb'
-  []
-  [body_top_fine]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0.495
-    xmax = 0.5
-    ymin = 0.505
-    ymax = 1.005
-    nx = 12
-    ny = 50 # 12
-    bias_x = 0.667
-    bias_y = 0.8333
-    boundary_name_prefix = 'btf'
   []
   [body_top_chamber]
     type = GeneratedMeshGenerator
@@ -153,38 +113,8 @@ lower_value_threshold_concentration_YHx = -1e-20
     ymin = 0.505
     ymax = 1.005
     nx = 12
-    ny = 50 # 12
-    bias_x = 1.5
-    bias_y = 0.8333
+    ny = 100
     boundary_name_prefix = 'btc'
-  []
-
-  # ============ Top cap pieces (y = [1.005, 1.01], all chamber) ============
-  [cap_top_bulk]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0
-    xmax = 0.495
-    ymin = 1.005
-    ymax = 1.01
-    nx = 29
-    ny = 12
-    bias_x = 0.9
-    bias_y = 1.5
-    boundary_name_prefix = 'ctb'
-  []
-  [cap_top_fine]
-    type = GeneratedMeshGenerator
-    dim = 2
-    xmin = 0.495
-    xmax = 0.5
-    ymin = 1.005
-    ymax = 1.01
-    nx = 12
-    ny = 12
-    bias_x = 0.667
-    bias_y = 1.5
-    boundary_name_prefix = 'ctf'
   []
   [cap_top_chamber]
     type = GeneratedMeshGenerator
@@ -194,23 +124,15 @@ lower_value_threshold_concentration_YHx = -1e-20
     ymin = 1.005
     ymax = 1.01
     nx = 12
-    ny = 12
-    bias_x = 1.5
-    bias_y = 1.5
+    ny = 24
     boundary_name_prefix = 'ctc'
   []
 
   # ============ Stitch vertically (4 pieces per column) ============
-  [col_bulk]
+  [col_sample]
     type = StitchMeshGenerator
-    inputs = 'cap_bot_bulk body_bot_bulk body_top_bulk cap_top_bulk'
-    stitch_boundaries_pairs = 'cbb_top bbb_bottom; bbb_top btb_bottom; btb_top ctb_bottom'
-    clear_stitched_boundary_ids = true
-  []
-  [col_fine]
-    type = StitchMeshGenerator
-    inputs = 'cap_bot_fine body_bot_fine body_top_fine cap_top_fine'
-    stitch_boundaries_pairs = 'cbf_top bbf_bottom; bbf_top btf_bottom; btf_top ctf_bottom'
+    inputs = 'cap_bot_sample body_bot_sample body_top_sample cap_top_sample'
+    stitch_boundaries_pairs = 'cbs_top bbs_bottom; bbs_top bts_bottom; bts_top cts_bottom'
     clear_stitched_boundary_ids = true
   []
   [col_chamber]
@@ -221,24 +143,14 @@ lower_value_threshold_concentration_YHx = -1e-20
   []
 
   # ============ Consolidate boundaries for radial stitching ============
-  [rename_col_bulk]
+  [rename_col_sample]
     type = RenameBoundaryGenerator
-    input = col_bulk
-    old_boundary = 'cbb_right bbb_right btb_right ctb_right
-                    cbb_left bbb_left btb_left ctb_left
-                    cbb_bottom ctb_top'
-    new_boundary = 'bulk_right bulk_right bulk_right bulk_right
+    input = col_sample
+    old_boundary = 'cbs_right bbs_right bts_right cts_right
+                    cbs_left bbs_left bts_left cts_left
+                    cbs_bottom cts_top'
+    new_boundary = 'sample_right sample_right sample_right sample_right
                     left left left left
-                    bottom top'
-  []
-  [rename_col_fine]
-    type = RenameBoundaryGenerator
-    input = col_fine
-    old_boundary = 'cbf_right bbf_right btf_right ctf_right
-                    cbf_left bbf_left btf_left ctf_left
-                    cbf_bottom ctf_top'
-    new_boundary = 'fine_right fine_right fine_right fine_right
-                    fine_left fine_left fine_left fine_left
                     bottom top'
   []
   [rename_col_chamber]
@@ -253,16 +165,10 @@ lower_value_threshold_concentration_YHx = -1e-20
   []
 
   # ============ Stitch radially ============
-  [stitch_sample]
-    type = StitchMeshGenerator
-    inputs = 'rename_col_bulk rename_col_fine'
-    stitch_boundaries_pairs = 'bulk_right fine_left'
-    clear_stitched_boundary_ids = true
-  []
   [stitch_all]
     type = StitchMeshGenerator
-    inputs = 'stitch_sample rename_col_chamber'
-    stitch_boundaries_pairs = 'fine_right chamber_left'
+    inputs = 'rename_col_sample rename_col_chamber'
+    stitch_boundaries_pairs = 'sample_right chamber_left'
     clear_stitched_boundary_ids = true
   []
 
@@ -389,8 +295,8 @@ lower_value_threshold_concentration_YHx = -1e-20
 
   [dtmax_function]
     type = PiecewiseLinear
-    x = '0     34.0   34.1'
-    y = '2.0   2.0    1e-1'
+    x = '0     34.0   34.2'
+    y = '2.0   2.0    2e-1'
   []
 
   # ------------- THERMAL EXPANSION FUNCTIONS -------------
@@ -477,7 +383,7 @@ lower_value_threshold_concentration_YHx = -1e-20
     boundary = 'outer top bottom'
     variable = h_conc_gas
     value = 8.0
-  []  
+  []
 
   # ===================== MECHANICS BCs ========================
 
