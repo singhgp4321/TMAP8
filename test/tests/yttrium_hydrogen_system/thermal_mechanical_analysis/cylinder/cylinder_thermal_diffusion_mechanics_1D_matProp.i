@@ -142,6 +142,18 @@ lower_value_threshold_concentration_YHx = 0.0 # -1e-20
     order = FIRST
     family = LAGRANGE
   []
+  [stress_xx]
+    order = CONSTANT
+    family = MONOMIAL
+  []
+  [stress_yy]
+    order = CONSTANT
+    family = MONOMIAL
+  []
+  [stress_zz]
+    order = CONSTANT
+    family = MONOMIAL
+  []
 []
 
 [Problem]
@@ -297,6 +309,30 @@ lower_value_threshold_concentration_YHx = 0.0 # -1e-20
     coupled_variables = 'h_conc_gas temp'
     expression = '${R} * temp * h_conc_gas/2'
     block = chamber
+    execute_on = 'initial timestep_end'
+  []
+  [stress_xx]
+    type = ADRankTwoAux
+    variable = stress_xx
+    rank_two_tensor = stress
+    index_i = 0
+    index_j = 0
+    execute_on = 'initial timestep_end'
+  []
+  [stress_yy]
+    type = ADRankTwoAux
+    variable = stress_yy
+    rank_two_tensor = stress
+    index_i = 1
+    index_j = 1
+    execute_on = 'initial timestep_end'
+  []
+  [stress_zz]
+    type = ADRankTwoAux
+    variable = stress_zz
+    rank_two_tensor = stress
+    index_i = 2
+    index_j = 2
     execute_on = 'initial timestep_end'
   []
 []
@@ -580,8 +616,39 @@ lower_value_threshold_concentration_YHx = 0.0 # -1e-20
     execute_on = 'initial timestep_end'
     outputs = none
   []
+  [dehydriding_rate]
+    type = ADInterfaceDiffusiveFluxIntegral
+    variable = h_conc_gas
+    neighbor_variable = h_conc
+    boundary = interface
+    diffusivity = diffusivity_gas
+    neighbor_diffusivity = diffusivity_YHx
+  []
+  [dehydriding_rate_total]
+    type = ParsedPostprocessor
+    expression = 'dehydriding_rate * 2 * pi'
+    pp_names = 'dehydriding_rate'
+    constant_names = 'pi'
+    constant_expressions = '3.141592653589793'
+  []
 []
+
+# [VectorPostprocessors]
+#   [line_sample]
+#     type = LineValueSampler
+#     variable = 'temp stress_xx'
+#     start_point = '0 0 0'
+#     end_point = '0.005 0 0'
+#     num_points = 5
+#     sort_by = x
+#     execute_on = 'initial timestep_end'
+#   []
+# []
+
 [Outputs]
   exodus = true
-  csv = false
+  [csv]
+    type = CSV
+    time_step_interval = 10
+  []
 []
